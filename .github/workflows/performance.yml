@@ -24,7 +24,7 @@ jobs:
           LOGIN_PERMITS_PER_MINUTE: "1000"
         run: docker compose -f deploy/compose/docker-compose.yml up --build -d
       - name: Wait for readiness
-        run: for i in $(seq 1 60); do curl -fs http://localhost:8080/health/ready && break; sleep 2; done
+        run: for _ in $(seq 1 60); do curl -fs http://localhost:8080/health/ready && break; sleep 2; done
       - name: Run k6 baseline
         run: |
           mkdir -p tests/k6/results
