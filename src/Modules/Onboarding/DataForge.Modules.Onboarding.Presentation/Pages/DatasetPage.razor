@@ -1,0 +1,193 @@
+@page "/datasets/{DatasetId:guid}"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = AuthorizationPolicies.TenantUser)]
+@implements IAsyncDisposable
+@using DataForge.Modules.Onboarding.Application.UseCases.Datasets.GetById.Contracts
+@using DataForge.Modules.Onboarding.Application.UseCases.Datasets.GetById.Interfaces
+@using DataForge.Modules.Onboarding.Application.UseCases.Datasets.GetRows.Contracts
+@using DataForge.Modules.Onboarding.Application.UseCases.Datasets.GetRows.Interfaces
+@using DataForge.Modules.Onboarding.Contracts.Dtos
+@using DataForge.Modules.Onboarding.Contracts.Interfaces
+@inject IGetDatasetByIdUseCase GetDataset
+@inject IGetDatasetRowsUseCase GetRows
+
+<PageTitle>@(_dataset?.Dataset.FileName ?? "Dataset") | DataForge</PageTitle>
+
+@if (_notFound)
+{
+    <EmptyState Title="File not found" Description="It may have been removed, or it belongs to another organization." TestId="dataset-not-found">
+        <a href="/projects" class="button button--secondary">Back to projects</a>
+    </EmptyState>
+}
+else if (_dataset is not null)
+{
+    var dataset = _dataset.Dataset;
+    <PageHeader Title="@dataset.FileName">
+        <Breadcrumb><a href="/projects">Projects</a> <span aria-hidden="true">/</span> <a href="/projects/@dataset.ProjectId">Project</a></Breadcrumb>
+        <Actions>
+            @if (dataset.Status == "Imported")
+            {
+                <a href="/datasets/@DatasetId/validation" class="button button--primary" data-testid="validation-link">View validation results</a>
+            }
+        </Actions>
+    </PageHeader>
+
+    <section class="panel" aria-labelledby="import-title" data-testid="import-panel">
+        <div class="panel__header">
+            <h2 id="import-title" class="panel__title">Import</h2>
+            <StatusBadge Status="@dataset.Status" TestId="dataset-status" />
+        </div>
+
+        @if (dataset.Status is "Uploaded" or "Importing")
+        {
+            <p class="muted" data-testid="import-progress-text">
+                @(_dataset.ImportJob is { ProcessedItems: > 0 } job ? $"{DisplayFormat.Count(job.ProcessedItems)} rows staged so far" : "Waiting for a worker to pick up the file…")
+            </p>
+            <div class="progress progress--indeterminate" aria-hidden="true"><div class="progress__track"><div class="progress__fill"></div></div></div>
+        }
+        else if (dataset.Status == "Failed")
+        {
+            <AlertMessage Message="@dataset.FailureReason" Tone="danger" TestId="import-failure" />
+        }
+
+        <dl class="facts">
+            <div><dt>Rows</dt><dd data-testid="dataset-row-count">@DisplayFormat.Count(dataset.RowCount)</dd></div>
+            <div><dt>Columns</dt><dd>@dataset.Columns.Count</dd></div>
+            <div><dt>Size</dt><dd>@DisplayFormat.Bytes(dataset.SizeBytes)</dd></div>
+            <div><dt>Uploaded</dt><dd>@DisplayFormat.Timestamp(dataset.CreatedAt)</dd></div>
+            <div><dt>Imported</dt><dd>@DisplayFormat.Timestamp(dataset.ImportedAt)</dd></div>
+            <div><dt>Import time</dt><dd>@DisplayFormat.Duration(_dataset.ImportJob?.StartedAt, _dataset.ImportJob?.CompletedAt)</dd></div>
+        </dl>
+    </section>
+
+    @if (_rows is not null && dataset.Columns.Count > 0)
+    {
+        <section aria-labelledby="preview-title">
+            <h2 id="preview-title" class="section-title">Preview</h2>
+            <div class="table-wrap table-wrap--scroll">
+                <table class="table table--data" data-testid="dataset-preview">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="num">Row</th>
+                            @foreach (var column in dataset.Columns)
+                            {
+                                <th scope="col">@column</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td class="num muted">@row.RowNumber</td>
+                                @for (var index = 0; index < dataset.Columns.Count; index++)
+                                {
+                                    <td class="cell-value">@(index < row.Values.Count ? row.Values[index] : null)</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="pager">
+                <button type="button" class="button button--secondary" disabled="@(_cursors.Count == 0)" @onclick="PreviousPageAsync">Previous rows</button>
+                <button type="button" class="button button--secondary" disabled="@(_nextCursor is null)" @onclick="NextPageAsync" data-testid="preview-next">Next rows</button>
+            </div>
+        </section>
+    }
+}
+
+@code {
+    private const int PageSize = 20;
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
+
+    [Parameter]
+    public Guid DatasetId { get; set; }
+
+    private readonly CancellationTokenSource _disposed = new();
+    private readonly Stack<long> _cursors = new();
+    private GetDatasetByIdResponse? _dataset;
+    private IReadOnlyList<DatasetRowDto>? _rows;
+    private long _currentCursor;
+    private long? _nextCursor;
+    private bool _notFound;
+    private bool _polling;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+        if (!IsSettled && !_polling)
+        {
+            _polling = true;
+            _ = PollAsync();
+        }
+    }
+
+    private bool IsSettled => _dataset?.Dataset.Status is "Imported" or "Failed" || _notFound;
+
+    private async Task LoadAsync()
+    {
+        var result = await GetDataset.ExecuteAsync(new GetDatasetByIdRequest(DatasetId), _disposed.Token);
+        if (result.IsFailure)
+        {
+            _notFound = true;
+            return;
+        }
+
+        _dataset = result.Value;
+        if (_dataset.Dataset.Status == "Imported" && _rows is null)
+        {
+            await LoadRowsAsync(0);
+        }
+    }
+
+    private async Task LoadRowsAsync(long cursor)
+    {
+        var rows = await GetRows.ExecuteAsync(new GetDatasetRowsRequest(DatasetId, cursor, PageSize), _disposed.Token);
+        if (rows.IsSuccess)
+        {
+            _currentCursor = cursor;
+            _rows = rows.Value.Rows;
+            _nextCursor = rows.Value.NextCursor;
+        }
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_nextCursor is { } next)
+        {
+            _cursors.Push(_currentCursor);
+            await LoadRowsAsync(next);
+        }
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (_cursors.TryPop(out var previous))
+        {
+            await LoadRowsAsync(previous);
+        }
+    }
+
+    private async Task PollAsync()
+    {
+        using var timer = new PeriodicTimer(PollInterval);
+        try
+        {
+            while (!IsSettled && await timer.WaitForNextTickAsync(_disposed.Token))
+            {
+                await LoadAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _disposed.CancelAsync();
+        _disposed.Dispose();
+    }
+}

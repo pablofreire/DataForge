@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="../../../BuildingBlocks/DataForge.BuildingBlocks.Domain/DataForge.BuildingBlocks.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

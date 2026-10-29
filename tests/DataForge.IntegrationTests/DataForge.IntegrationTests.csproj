@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Hosts/DataForge.Web/DataForge.Web.csproj" />
+    <ProjectReference Include="../../src/Hosts/DataForge.Migrator/DataForge.Migrator.csproj" />
+  </ItemGroup>
+
+</Project>

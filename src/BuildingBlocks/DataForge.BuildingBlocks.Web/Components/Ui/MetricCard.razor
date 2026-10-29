@@ -1,0 +1,22 @@
+<div class="metric-card" data-testid="@TestId">
+    <span class="metric-card__label">@Label</span>
+    <span class="metric-card__value">@Value</span>
+    @if (!string.IsNullOrWhiteSpace(Hint))
+    {
+        <span class="metric-card__hint">@Hint</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Hint { get; set; }
+
+    [Parameter]
+    public string? TestId { get; set; }
+}

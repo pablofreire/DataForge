@@ -1,0 +1,72 @@
+@page "/account/login"
+@layout CenteredLayout
+@attribute [AllowAnonymous]
+@using DataForge.Modules.Identity.Application.UseCases.Authentication.Authenticate.Contracts
+@using DataForge.Modules.Identity.Application.UseCases.Authentication.Authenticate.Interfaces
+@using DataForge.Modules.Identity.Presentation.Authentication
+@inject IAuthenticateUserUseCase AuthenticateUser
+@inject NavigationManager Navigation
+
+<PageTitle>Sign in | DataForge</PageTitle>
+
+<section class="auth-card" aria-labelledby="login-title">
+    <h1 id="login-title" class="auth-card__title">Sign in to DataForge</h1>
+    <p class="auth-card__lead">Load, validate and prepare customer data for go-live.</p>
+
+    <AlertMessage Message="@_errorMessage" Tone="danger" TestId="login-error" />
+
+    <EditForm Model="Input" method="post" OnValidSubmit="SignInAsync" FormName="login" class="form" novalidate>
+        <DataAnnotationsValidator />
+
+        <div class="field">
+            <label for="email" class="field__label">E-mail</label>
+            <InputText id="email" @bind-Value="Input!.Email" class="field__input" autocomplete="username" data-testid="login-email" />
+            <ValidationMessage For="() => Input!.Email" class="field__error" />
+        </div>
+
+        <div class="field">
+            <label for="password" class="field__label">Password</label>
+            <InputText id="password" type="password" @bind-Value="Input!.Password" class="field__input" autocomplete="current-password" data-testid="login-password" />
+            <ValidationMessage For="() => Input!.Password" class="field__error" />
+        </div>
+
+        <button type="submit" class="button button--primary button--block" data-testid="login-submit">Sign in</button>
+    </EditForm>
+</section>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private LoginFormModel? Input { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private string? _errorMessage;
+
+    // Field names posted by the form derive from these expressions, so they must reference the bound Input property.
+    protected override void OnInitialized() => Input ??= new LoginFormModel();
+
+
+    private async Task SignInAsync()
+    {
+        var result = await AuthenticateUser.ExecuteAsync(new AuthenticateUserRequest(Input!.Email, Input!.Password), HttpContext.RequestAborted);
+        if (result.IsFailure)
+        {
+            _errorMessage = result.Error.Message;
+            Input!.Password = string.Empty;
+            return;
+        }
+
+        await AuthenticationCookie.SignInAsync(HttpContext, result.Value);
+        Navigation.NavigateTo(SafeReturnUrl(ReturnUrl), forceLoad: true);
+    }
+
+    // Only local paths are accepted, preventing open redirects through ?returnUrl=https://evil.example.
+    private static string SafeReturnUrl(string? returnUrl) =>
+        !string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith('/') && !returnUrl.StartsWith("//", StringComparison.Ordinal) && !returnUrl.StartsWith("/\\", StringComparison.Ordinal)
+            ? returnUrl
+            : "/";
+}

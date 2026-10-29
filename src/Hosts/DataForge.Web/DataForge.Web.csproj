@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <UserSecretsId>dataforge-web</UserSecretsId>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlocks/DataForge.BuildingBlocks.Infrastructure/DataForge.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/DataForge.BuildingBlocks.Web/DataForge.BuildingBlocks.Web.csproj" />
+    <ProjectReference Include="../../Modules/Identity/DataForge.Modules.Identity.Application/DataForge.Modules.Identity.Application.csproj" />
+    <ProjectReference Include="../../Modules/Identity/DataForge.Modules.Identity.Infrastructure/DataForge.Modules.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="../../Modules/Identity/DataForge.Modules.Identity.Presentation/DataForge.Modules.Identity.Presentation.csproj" />
+    <ProjectReference Include="../../Modules/Onboarding/DataForge.Modules.Onboarding.Application/DataForge.Modules.Onboarding.Application.csproj" />
+    <ProjectReference Include="../../Modules/Onboarding/DataForge.Modules.Onboarding.Infrastructure/DataForge.Modules.Onboarding.Infrastructure.csproj" />
+    <ProjectReference Include="../../Modules/Onboarding/DataForge.Modules.Onboarding.Presentation/DataForge.Modules.Onboarding.Presentation.csproj" />
+    <ProjectReference Include="../../Modules/Validation/DataForge.Modules.Validation.Application/DataForge.Modules.Validation.Application.csproj" />
+    <ProjectReference Include="../../Modules/Validation/DataForge.Modules.Validation.Infrastructure/DataForge.Modules.Validation.Infrastructure.csproj" />
+    <ProjectReference Include="../../Modules/Validation/DataForge.Modules.Validation.Presentation/DataForge.Modules.Validation.Presentation.csproj" />
+    <ProjectReference Include="../../Modules/Processing/DataForge.Modules.Processing.Application/DataForge.Modules.Processing.Application.csproj" />
+    <ProjectReference Include="../../Modules/Processing/DataForge.Modules.Processing.Infrastructure/DataForge.Modules.Processing.Infrastructure.csproj" />
+    <ProjectReference Include="../../Modules/Processing/DataForge.Modules.Processing.Presentation/DataForge.Modules.Processing.Presentation.csproj" />
+  </ItemGroup>
+
+</Project>

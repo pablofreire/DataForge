@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UserSecretsId>dataforge-migrator</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Serilog.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlocks/DataForge.BuildingBlocks.Infrastructure/DataForge.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="../../Modules/Identity/DataForge.Modules.Identity.Infrastructure/DataForge.Modules.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="../../Modules/Onboarding/DataForge.Modules.Onboarding.Infrastructure/DataForge.Modules.Onboarding.Infrastructure.csproj" />
+    <ProjectReference Include="../../Modules/Validation/DataForge.Modules.Validation.Infrastructure/DataForge.Modules.Validation.Infrastructure.csproj" />
+    <ProjectReference Include="../../Modules/Processing/DataForge.Modules.Processing.Infrastructure/DataForge.Modules.Processing.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

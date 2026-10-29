@@ -1,0 +1,84 @@
+# Local, production-like stack: PostgreSQL, one-shot migrator (with demo seed), web and worker.
+#   docker compose -f deploy/compose/docker-compose.yml up --build -d
+# Demo credentials and passwords below are for local use only; override them with a .env file (see .env.example).
+name: dataforge
+
+x-database: &database
+  Database__ConnectionString: Host=postgres;Port=5432;Database=dataforge;Username=dataforge;Password=${POSTGRES_PASSWORD:-dataforge_local}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: dataforge
+      POSTGRES_USER: dataforge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dataforge_local}
+    ports:
+      - "${POSTGRES_PORT:-55433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dataforge -d dataforge"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrator:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        HOST: DataForge.Migrator
+    command: ["--seed-demo"]
+    environment:
+      <<: *database
+      DemoSeed__Password: ${DEMO_PASSWORD:-DataForge!Demo2026}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        HOST: DataForge.Web
+    environment:
+      <<: *database
+      ASPNETCORE_HTTP_PORTS: "8080"
+      FileStorage__RootPath: /data/files
+      DataProtection__KeysPath: /data/keys
+      Logging__Json: "true"
+      RateLimiting__LoginPermitsPerMinute: ${LOGIN_PERMITS_PER_MINUTE:-60}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    volumes:
+      - files:/data/files
+      - keys:/data/keys
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        HOST: DataForge.Worker
+    environment:
+      <<: *database
+      FileStorage__RootPath: /data/files
+      Logging__Json: "true"
+      Processing__MaxConcurrentJobs: ${WORKER_CONCURRENCY:-2}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+    volumes:
+      - files:/data/files
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  files:
+  keys:

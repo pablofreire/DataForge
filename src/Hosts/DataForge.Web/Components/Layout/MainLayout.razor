@@ -1,0 +1,46 @@
+@inherits LayoutComponentBase
+
+<div class="shell">
+    <aside class="sidebar" aria-label="Main navigation">
+        <a class="sidebar__brand" href="/">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span class="brand-name">DataForge</span>
+        </a>
+
+        <nav class="sidebar__nav">
+            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All" data-testid="nav-dashboard">Dashboard</NavLink>
+            <NavLink class="nav-link" href="/projects" data-testid="nav-projects">Projects</NavLink>
+            <AuthorizeView Roles="@DataForgeRoles.ImplementationEngineer">
+                <span class="sidebar__group">Implementation team</span>
+                <NavLink class="nav-link" href="/operations" data-testid="nav-operations">Operations</NavLink>
+            </AuthorizeView>
+        </nav>
+    </aside>
+
+    <div class="shell__main">
+        <header class="topbar">
+            <AuthorizeView>
+                <Authorized>
+                    <div class="topbar__tenant" data-testid="current-tenant">@context.User.FindFirst(DataForgeClaimTypes.TenantName)?.Value</div>
+                    <div class="topbar__actions">
+                        <button type="button" class="button button--ghost theme-toggle" data-theme-toggle aria-label="Switch between light and dark theme">Theme</button>
+                        <span class="topbar__user" data-testid="current-user">@context.User.Identity?.Name</span>
+                        <form method="post" action="/account/logout" class="topbar__logout">
+                            <AntiforgeryToken />
+                            <button type="submit" class="button button--ghost" data-testid="logout">Sign out</button>
+                        </form>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+        </header>
+
+        <main class="content" id="main">
+            @Body
+        </main>
+    </div>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet role="alert">
+    Something went wrong and this page stopped responding.
+    <a href="." class="reload">Reload the page</a>
+</div>

@@ -1,0 +1,19 @@
+<span class="badge badge--@Tone" data-testid="@TestId" data-status="@Status">@Status</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Status { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? TestId { get; set; }
+
+    private string Tone => Status switch
+    {
+        "Succeeded" or "Completed" or "Imported" or "Active" => "success",
+        "Running" or "Importing" or "Validating" => "info",
+        "Queued" or "Uploaded" or "Pending" => "neutral",
+        "Failed" => "danger",
+        "Cancelled" => "warning",
+        _ => "neutral",
+    };
+}

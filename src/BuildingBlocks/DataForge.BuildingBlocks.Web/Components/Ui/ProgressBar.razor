@@ -1,0 +1,20 @@
+<div class="progress" role="progressbar" aria-label="@Label" aria-valuemin="0" aria-valuemax="100"
+     aria-valuenow="@((int)Math.Round(Clamped))" data-testid="@TestId">
+    <div class="progress__track">
+        <div class="progress__fill" style="transform: scaleX(@((Clamped / 100).ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)))"></div>
+    </div>
+    <span class="progress__label">@Clamped.ToString("0", System.Globalization.CultureInfo.InvariantCulture)%</span>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public double Percent { get; set; }
+
+    [Parameter]
+    public string Label { get; set; } = "Progress";
+
+    [Parameter]
+    public string? TestId { get; set; }
+
+    private double Clamped => Math.Clamp(double.IsNaN(Percent) ? 0 : Percent, 0, 100);
+}
