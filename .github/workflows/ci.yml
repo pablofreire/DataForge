@@ -38,7 +38,7 @@ jobs:
         run: dotnet test --project tests/DataForge.IntegrationTests -c Release --no-build --report-xunit-trx --results-directory TestResults
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: TestResults
@@ -70,7 +70,7 @@ jobs:
         run: dotnet test --project tests/DataForge.E2ETests -c Release --no-build
       - name: Upload screenshots and traces
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-evidence
           path: e2e-evidence
