@@ -23,7 +23,7 @@ Status values:
 | Observability | Serilog structured JSON, correlation id, OpenTelemetry traces and metrics (ASP.NET Core, Npgsql, runtime, `DataForge.Processing` meter), `/health/live` and `/health/ready` | Implemented. Grafana dashboards planned |
 | Security | BCrypt, login rate limiting, user-enumeration timing equalization, CSRF protection, tenant isolation, ReDoS timeout on customer regexes, path-traversal-safe storage, no internal ids exposed, no secrets in the repository | Validated (unit and integration) |
 | Testing | 101 unit, 29 architecture, 17 integration (Testcontainers), 7 E2E (Playwright), k6 baseline | Validated |
-| Containers and CI/CD | Multi-stage Dockerfile, Compose stack, GitHub Actions workflows | Compose validated locally. CI is unproven until the first approved push |
+| Containers and CI/CD | Multi-stage Dockerfile, Compose stack, GitHub Actions workflows | Validated: Compose locally and the GitHub Actions CI on `main` (build, tests, E2E, gitleaks, Docker images, CodeQL) |
 | Azure | Hosts are Azure-ready: Container Apps, Azure Database for PostgreSQL, and `IFileStorage` ready for Blob Storage | Planned (Bicep) |
 | Claude Code and spec-driven development | Specs and acceptance criteria before code, AI-assisted implementation reviewed through automated gates. Conventions in [`CLAUDE.md`](../../CLAUDE.md) and [`AGENTS.md`](../../AGENTS.md) | Implemented |
 | Engineering judgment and trade-offs | [ADRs 0001–0006](../adr), including the explicit exception to the conventions for high-volume tables | Documented |
