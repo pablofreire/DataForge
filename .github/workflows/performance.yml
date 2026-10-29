@@ -32,7 +32,7 @@ jobs:
             -e VUS=${{ inputs.vus }} -e DURATION=${{ inputs.duration }} \
             -v "$PWD/tests/k6:/scripts" grafana/k6 run \
             --summary-export /scripts/results/baseline-${{ inputs.vus }}vus.json /scripts/scenarios/baseline.js
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: k6-results
