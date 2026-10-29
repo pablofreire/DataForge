@@ -16,7 +16,7 @@ Last updated: 2026-10-29.
 | Docker Compose stack: PostgreSQL, migrator with demo seed, web, worker | `deploy/compose/docker-compose.yml` | Running |
 | k6 baseline, 10 virtual users for 1 minute: 266,018 requests, 4,860 req/s, p95 3.11 ms, 0% errors | `docs/performance/baseline-2026-10-29.md` | Measured |
 | Release build and full suite: 154 tests | `dotnet test --solution DataForge.slnx -c Release` | Passing |
-| GitHub Actions CI on `main`: build, unit, architecture and integration tests, Playwright E2E against Docker Compose, gitleaks over the full history, Docker images for the 3 hosts, CodeQL | [Actions runs](https://github.com/pablofreire/DataForge/actions) for commit `4d7e0d2` | Passing |
+| GitHub Actions CI on `main`: build, unit, architecture and integration tests, Playwright E2E against Docker Compose, gitleaks over the full history, Docker images for the 3 hosts, CodeQL | [Actions runs on `main`](https://github.com/pablofreire/DataForge/actions?query=branch%3Amain) | Passing |
 | Branch protection on `main`: pull request required, 7 required status checks (strict), enforced for admins, linear history, no force pushes or deletion | Repository settings | Enabled |
 
 Bugs the tests caught and that are now fixed:
