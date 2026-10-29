@@ -13,7 +13,7 @@ DataForge is built with .NET 10, Blazor, the ASP.NET Core MVC API, Dapper, Postg
 3. **Background import.** A worker parses the file with Sep, which detects `,` `;` tab and `|`. Batches flow through a bounded channel and are written with binary COPY, with a checkpoint after each batch.
 4. **Automatic validation.** An integration event starts validation as soon as the import finishes. Rows are validated in parallel. Uniqueness is one set-based SQL aggregate per rule.
 5. **Results.** A quality strip shows the share of valid rows, followed by issues per rule and a keyset-paginated list of every offending value. The customer can run the validation again after uploading a corrected file.
-6. **Implementation console.** The internal team sees processing activity across every tenant.
+6. **Implementation console (basic).** The internal team sees processing activity across every tenant.
 
 ## Architecture
 
@@ -68,7 +68,7 @@ All demo accounts use the password `DataForge!Demo2026` (local only; override it
 | Level | What it proves | Location | Result |
 |---|---|---|---|
 | Unit (101) | Rules, job runner outcomes, pipeline backpressure, upload idempotency, authentication timing equalization | `tests/BuildingBlocks`, `tests/Modules` | Passing |
-| Architecture (19) | Module boundaries, layer direction, naming suffixes, sealed classes, Dapper only in Infrastructure | `tests/DataForge.ArchitectureTests` | Passing |
+| Architecture (29) | Module boundaries, layer direction, naming suffixes, one artifact kind per folder, sealed classes, Dapper only in Infrastructure | `tests/DataForge.ArchitectureTests` | Passing |
 | Integration (17) | Migrations, full pipeline, 25k-row batching, resume after a crash, `SKIP LOCKED` under 8 concurrent workers, lease fencing, CSRF, tenant isolation | `tests/DataForge.IntegrationTests` (PostgreSQL 17 via Testcontainers) | Passing |
 | End-to-end (7) | Sign-in and access control, onboarding to validation results in the browser, tenant isolation | `tests/DataForge.E2ETests` (Playwright against Docker Compose) | Passing; screenshots in [`docs/evidence/e2e`](docs/evidence/e2e) |
 | Load | Baseline at 10 VUs: 4,860 req/s, p95 3.1 ms, 0% errors (single machine, see caveats) | [`docs/performance`](docs/performance/baseline-2026-10-29.md) | Measured |
@@ -79,6 +79,15 @@ pwsh scripts/e2e.ps1         # compose up + Playwright + evidence
 ```
 
 **Not yet claimed:** throughput on datasets with tens or hundreds of millions of rows. The pipeline is designed for it (constant memory, COPY, keyset pagination, checkpoints), but no number is published until it is measured. See [STATUS.md](STATUS.md).
+
+## Status and roadmap
+
+The MVP flow (sign-in, project, upload, import, validation, results) is implemented and covered by the suites above. Planned next, in this order (details in [STATUS.md](STATUS.md)):
+
+1. Load profiles at 50–500 virtual users and import/validation throughput for 1M+ rows (dataset generator and BenchmarkDotNet).
+2. Correction, cancel/resume and export flows in the UI, plus responsive end-to-end tests.
+3. An observability profile with the OpenTelemetry Collector, Prometheus and Grafana.
+4. Production key management for ASP.NET Core Data Protection.
 
 ## Repository layout
 
