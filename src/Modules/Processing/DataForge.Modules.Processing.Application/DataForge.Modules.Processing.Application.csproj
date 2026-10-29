@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="../DataForge.Modules.Processing.Domain/DataForge.Modules.Processing.Domain.csproj" />
+    <ProjectReference Include="../DataForge.Modules.Processing.Contracts/DataForge.Modules.Processing.Contracts.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/DataForge.BuildingBlocks.Application/DataForge.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="../../Identity/DataForge.Modules.Identity.Contracts/DataForge.Modules.Identity.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

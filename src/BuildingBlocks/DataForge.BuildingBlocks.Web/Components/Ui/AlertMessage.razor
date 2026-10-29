@@ -1,0 +1,16 @@
+@if (!string.IsNullOrWhiteSpace(Message))
+{
+    <div class="alert alert--@Tone" role="@(Tone == "danger" ? "alert" : "status")" data-testid="@TestId">@Message</div>
+}
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+
+    /// <summary>One of: info, success, warning, danger.</summary>
+    [Parameter]
+    public string Tone { get; set; } = "info";
+
+    [Parameter]
+    public string? TestId { get; set; }
+}

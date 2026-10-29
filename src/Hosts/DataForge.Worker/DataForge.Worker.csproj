@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <UserSecretsId>dataforge-worker</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlocks/DataForge.BuildingBlocks.Infrastructure/DataForge.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="../../Modules/Identity/DataForge.Modules.Identity.Application/DataForge.Modules.Identity.Application.csproj" />
+    <ProjectReference Include="../../Modules/Identity/DataForge.Modules.Identity.Infrastructure/DataForge.Modules.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="../../Modules/Onboarding/DataForge.Modules.Onboarding.Application/DataForge.Modules.Onboarding.Application.csproj" />
+    <ProjectReference Include="../../Modules/Onboarding/DataForge.Modules.Onboarding.Infrastructure/DataForge.Modules.Onboarding.Infrastructure.csproj" />
+    <ProjectReference Include="../../Modules/Validation/DataForge.Modules.Validation.Application/DataForge.Modules.Validation.Application.csproj" />
+    <ProjectReference Include="../../Modules/Validation/DataForge.Modules.Validation.Infrastructure/DataForge.Modules.Validation.Infrastructure.csproj" />
+    <ProjectReference Include="../../Modules/Processing/DataForge.Modules.Processing.Application/DataForge.Modules.Processing.Application.csproj" />
+    <ProjectReference Include="../../Modules/Processing/DataForge.Modules.Processing.Infrastructure/DataForge.Modules.Processing.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

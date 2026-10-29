@@ -1,0 +1,286 @@
+@page "/datasets/{DatasetId:guid}/validation"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = AuthorizationPolicies.TenantUser)]
+@implements IAsyncDisposable
+@using DataForge.Modules.Validation.Application.UseCases.Issues.Shared
+@using DataForge.Modules.Validation.Application.UseCases.Issues.List.Contracts
+@using DataForge.Modules.Validation.Application.UseCases.Issues.List.Interfaces
+@using DataForge.Modules.Validation.Application.UseCases.Runs.GetLatest.Contracts
+@using DataForge.Modules.Validation.Application.UseCases.Runs.GetLatest.Interfaces
+@using DataForge.Modules.Validation.Application.UseCases.Runs.Start.Contracts
+@using DataForge.Modules.Validation.Application.UseCases.Runs.Start.Interfaces
+@inject IGetLatestValidationRunUseCase GetLatestRun
+@inject IListValidationIssuesUseCase ListIssues
+@inject IStartValidationRunUseCase StartRun
+
+<PageTitle>Validation results | DataForge</PageTitle>
+
+@if (_notFound)
+{
+    <EmptyState Title="File not found" Description="It may have been removed, or it belongs to another organization." TestId="validation-not-found">
+        <a href="/projects" class="button button--secondary">Back to projects</a>
+    </EmptyState>
+}
+else if (_latest is not null)
+{
+    <PageHeader Title="Validation results" Subtitle="Rows that break a rule must be corrected in the source file and uploaded again.">
+        <Breadcrumb><a href="/datasets/@DatasetId">Back to file</a></Breadcrumb>
+        <Actions>
+            <button type="button" class="button button--secondary" disabled="@(_starting || IsRunning)" @onclick="StartAsync" data-testid="run-validation">
+                @(_latest.Run is null ? "Run validation" : "Run validation again")
+            </button>
+        </Actions>
+    </PageHeader>
+
+    <AlertMessage Message="@_error" Tone="danger" TestId="validation-error" />
+
+    @if (_latest.Run is null)
+    {
+        <EmptyState Title="This file has not been validated yet" Description="Add rules to the project, then run the validation." TestId="validation-empty" />
+    }
+    else
+    {
+        var run = _latest.Run;
+        <section class="panel" aria-labelledby="run-title" data-testid="run-panel">
+            <div class="panel__header">
+                <h2 id="run-title" class="panel__title">Latest run</h2>
+                <StatusBadge Status="@run.Status" TestId="run-status" />
+            </div>
+
+            @if (IsRunning)
+            {
+                <ProgressBar Percent="@RunPercent(run)" Label="Validation progress" TestId="run-progress" />
+                <p class="muted">@DisplayFormat.Count(run.ValidatedRows) of @DisplayFormat.Count(run.TotalRows) rows checked</p>
+            }
+            else if (run.Status == "Failed")
+            {
+                <AlertMessage Message="@run.FailureReason" Tone="danger" />
+            }
+            else
+            {
+                <QualityStrip ValidRows="run.ValidRows" InvalidRows="run.InvalidRows" />
+                <div class="summary-row">
+                    <MetricCard Label="Rows checked" Value="@DisplayFormat.Count(run.TotalRows)" TestId="metric-total" />
+                    <MetricCard Label="Issues found" Value="@DisplayFormat.Count(run.IssueCount)" TestId="metric-issues" />
+                    <MetricCard Label="Rules applied" Value="@run.RuleCount.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                    <MetricCard Label="Duration" Value="@DisplayFormat.Duration(_latest.Job?.StartedAt, _latest.Job?.CompletedAt)" />
+                </div>
+            }
+        </section>
+
+        @if (_latest.RuleStats.Count > 0)
+        {
+            <section aria-labelledby="by-rule-title">
+                <h2 id="by-rule-title" class="section-title">Issues by rule</h2>
+                <div class="table-wrap">
+                    <table class="table" data-testid="rule-stats">
+                        <thead>
+                            <tr>
+                                <th scope="col">Column</th>
+                                <th scope="col">Check</th>
+                                <th scope="col" class="num">Issues</th>
+                                <th scope="col"><span class="visually-hidden">Filter</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var stat in _latest.RuleStats)
+                            {
+                                <tr>
+                                    <td class="cell-value">@stat.ColumnName</td>
+                                    <td>@stat.RuleType</td>
+                                    <td class="num">@DisplayFormat.Count(stat.IssueCount)</td>
+                                    <td class="actions"><button type="button" class="button button--ghost" @onclick="() => FilterAsync(stat.ColumnName)">Show issues</button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        }
+
+        @if (run.Status == "Completed")
+        {
+            <section aria-labelledby="issues-title">
+                <div class="section-header">
+                    <h2 id="issues-title" class="section-title">Issues</h2>
+                    @if (_columnFilter is not null)
+                    {
+                        <span class="filter-chip">Column: @_columnFilter <button type="button" class="filter-chip__clear" @onclick="() => FilterAsync(null)" aria-label="Clear column filter">Clear</button></span>
+                    }
+                </div>
+
+                @if (_issues is { Count: 0 })
+                {
+                    <EmptyState Title="No issues" Description="Every row passed every rule. The file is ready to load." TestId="issues-empty" />
+                }
+                else if (_issues is not null)
+                {
+                    <div class="table-wrap">
+                        <table class="table" data-testid="issues-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="num">Row</th>
+                                    <th scope="col">Column</th>
+                                    <th scope="col">Value</th>
+                                    <th scope="col">Problem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var issue in _issues)
+                                {
+                                    <tr data-testid="issue-row">
+                                        <td class="num">@(issue.RowNumber == 0 ? "File" : DisplayFormat.Count(issue.RowNumber))</td>
+                                        <td class="cell-value">@issue.ColumnName</td>
+                                        <td class="cell-value cell-value--flagged">@(string.IsNullOrEmpty(issue.Value) ? "(blank)" : issue.Value)</td>
+                                        <td>@issue.Message</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pager">
+                        <button type="button" class="button button--secondary" disabled="@(_cursors.Count == 0)" @onclick="PreviousPageAsync">Previous</button>
+                        <button type="button" class="button button--secondary" disabled="@(_nextCursor is null)" @onclick="NextPageAsync" data-testid="issues-next">Next</button>
+                    </div>
+                }
+            </section>
+        }
+    }
+}
+
+@code {
+    private const int PageSize = 50;
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(1);
+
+    [Parameter]
+    public Guid DatasetId { get; set; }
+
+    private readonly CancellationTokenSource _disposed = new();
+    private readonly Stack<string?> _cursors = new();
+    private GetLatestValidationRunResponse? _latest;
+    private IReadOnlyList<ValidationIssueItem>? _issues;
+    private string? _currentCursor;
+    private string? _nextCursor;
+    private string? _columnFilter;
+    private string? _error;
+    private bool _notFound;
+    private bool _starting;
+    private bool _polling;
+
+    private bool IsRunning => _latest?.Run?.Status is "Queued" or "Running";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+        EnsurePolling();
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await GetLatestRun.ExecuteAsync(new GetLatestValidationRunRequest(DatasetId), _disposed.Token);
+        if (result.IsFailure)
+        {
+            _notFound = true;
+            return;
+        }
+
+        var wasRunning = IsRunning;
+        _latest = result.Value;
+        if (_latest.Run?.Status == "Completed" && (_issues is null || wasRunning))
+        {
+            _cursors.Clear();
+            await LoadIssuesAsync(null);
+        }
+    }
+
+    private async Task LoadIssuesAsync(string? cursor)
+    {
+        var result = await ListIssues.ExecuteAsync(new ListValidationIssuesRequest(DatasetId, cursor, PageSize, _columnFilter), _disposed.Token);
+        if (result.IsSuccess)
+        {
+            _currentCursor = cursor;
+            _issues = result.Value.Issues;
+            _nextCursor = result.Value.NextCursor;
+        }
+    }
+
+    private async Task StartAsync()
+    {
+        _starting = true;
+        _error = null;
+        var result = await StartRun.ExecuteAsync(new StartValidationRunRequest(DatasetId), _disposed.Token);
+        _starting = false;
+
+        if (result.IsFailure)
+        {
+            _error = result.Error.Message;
+            return;
+        }
+
+        _issues = null;
+        await LoadAsync();
+        EnsurePolling();
+    }
+
+    private async Task FilterAsync(string? column)
+    {
+        _columnFilter = column;
+        _cursors.Clear();
+        await LoadIssuesAsync(null);
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_nextCursor is not null)
+        {
+            _cursors.Push(_currentCursor);
+            await LoadIssuesAsync(_nextCursor);
+        }
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (_cursors.TryPop(out var previous))
+        {
+            await LoadIssuesAsync(previous);
+        }
+    }
+
+    private void EnsurePolling()
+    {
+        if (IsRunning && !_polling)
+        {
+            _polling = true;
+            _ = PollAsync();
+        }
+    }
+
+    private async Task PollAsync()
+    {
+        using var timer = new PeriodicTimer(PollInterval);
+        try
+        {
+            while (IsRunning && await timer.WaitForNextTickAsync(_disposed.Token))
+            {
+                await LoadAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            _polling = false;
+        }
+    }
+
+    private static double RunPercent(ValidationRunItem run) =>
+        run.TotalRows == 0 ? 0 : run.ValidatedRows * 100d / run.TotalRows;
+
+    public async ValueTask DisposeAsync()
+    {
+        await _disposed.CancelAsync();
+        _disposed.Dispose();
+    }
+}

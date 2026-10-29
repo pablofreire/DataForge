@@ -1,0 +1,18 @@
+@page "/error"
+@attribute [AllowAnonymous]
+@using System.Diagnostics
+
+<PageTitle>Error | DataForge</PageTitle>
+
+<EmptyState Title="Something went wrong" Description="The error was logged. Try again, and share the reference below with support if it keeps happening.">
+    <p class="muted">Reference: <span class="cell-value">@_traceId</span></p>
+</EmptyState>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? _traceId;
+
+    protected override void OnInitialized() => _traceId = Activity.Current?.TraceId.ToString() ?? HttpContext?.TraceIdentifier;
+}

@@ -1,0 +1,63 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/DataForge.BuildingBlocks.Application/DataForge.BuildingBlocks.Application.csproj" />
+    <Project Path="src/BuildingBlocks/DataForge.BuildingBlocks.Domain/DataForge.BuildingBlocks.Domain.csproj" />
+    <Project Path="src/BuildingBlocks/DataForge.BuildingBlocks.Infrastructure/DataForge.BuildingBlocks.Infrastructure.csproj" />
+    <Project Path="src/BuildingBlocks/DataForge.BuildingBlocks.Web/DataForge.BuildingBlocks.Web.csproj" />
+  </Folder>
+  <Folder Name="/src/Hosts/">
+    <Project Path="src/Hosts/DataForge.Migrator/DataForge.Migrator.csproj" />
+    <Project Path="src/Hosts/DataForge.Web/DataForge.Web.csproj" />
+    <Project Path="src/Hosts/DataForge.Worker/DataForge.Worker.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/DataForge.Modules.Identity.Application/DataForge.Modules.Identity.Application.csproj" />
+    <Project Path="src/Modules/Identity/DataForge.Modules.Identity.Contracts/DataForge.Modules.Identity.Contracts.csproj" />
+    <Project Path="src/Modules/Identity/DataForge.Modules.Identity.Domain/DataForge.Modules.Identity.Domain.csproj" />
+    <Project Path="src/Modules/Identity/DataForge.Modules.Identity.Infrastructure/DataForge.Modules.Identity.Infrastructure.csproj" />
+    <Project Path="src/Modules/Identity/DataForge.Modules.Identity.Presentation/DataForge.Modules.Identity.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Onboarding/">
+    <Project Path="src/Modules/Onboarding/DataForge.Modules.Onboarding.Application/DataForge.Modules.Onboarding.Application.csproj" />
+    <Project Path="src/Modules/Onboarding/DataForge.Modules.Onboarding.Contracts/DataForge.Modules.Onboarding.Contracts.csproj" />
+    <Project Path="src/Modules/Onboarding/DataForge.Modules.Onboarding.Domain/DataForge.Modules.Onboarding.Domain.csproj" />
+    <Project Path="src/Modules/Onboarding/DataForge.Modules.Onboarding.Infrastructure/DataForge.Modules.Onboarding.Infrastructure.csproj" />
+    <Project Path="src/Modules/Onboarding/DataForge.Modules.Onboarding.Presentation/DataForge.Modules.Onboarding.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Processing/">
+    <Project Path="src/Modules/Processing/DataForge.Modules.Processing.Application/DataForge.Modules.Processing.Application.csproj" />
+    <Project Path="src/Modules/Processing/DataForge.Modules.Processing.Contracts/DataForge.Modules.Processing.Contracts.csproj" />
+    <Project Path="src/Modules/Processing/DataForge.Modules.Processing.Domain/DataForge.Modules.Processing.Domain.csproj" />
+    <Project Path="src/Modules/Processing/DataForge.Modules.Processing.Infrastructure/DataForge.Modules.Processing.Infrastructure.csproj" />
+    <Project Path="src/Modules/Processing/DataForge.Modules.Processing.Presentation/DataForge.Modules.Processing.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Validation/">
+    <Project Path="src/Modules/Validation/DataForge.Modules.Validation.Application/DataForge.Modules.Validation.Application.csproj" />
+    <Project Path="src/Modules/Validation/DataForge.Modules.Validation.Domain/DataForge.Modules.Validation.Domain.csproj" />
+    <Project Path="src/Modules/Validation/DataForge.Modules.Validation.Infrastructure/DataForge.Modules.Validation.Infrastructure.csproj" />
+    <Project Path="src/Modules/Validation/DataForge.Modules.Validation.Presentation/DataForge.Modules.Validation.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DataForge.ArchitectureTests/DataForge.ArchitectureTests.csproj" />
+    <Project Path="tests/DataForge.E2ETests/DataForge.E2ETests.csproj" />
+    <Project Path="tests/DataForge.IntegrationTests/DataForge.IntegrationTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/BuildingBlocks/">
+    <Project Path="tests/BuildingBlocks/DataForge.BuildingBlocks.UnitTests/DataForge.BuildingBlocks.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Modules/" />
+  <Folder Name="/tests/Modules/Identity/">
+    <Project Path="tests/Modules/Identity/DataForge.Modules.Identity.UnitTests/DataForge.Modules.Identity.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Modules/Onboarding/">
+    <Project Path="tests/Modules/Onboarding/DataForge.Modules.Onboarding.UnitTests/DataForge.Modules.Onboarding.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Modules/Processing/">
+    <Project Path="tests/Modules/Processing/DataForge.Modules.Processing.UnitTests/DataForge.Modules.Processing.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Modules/Validation/">
+    <Project Path="tests/Modules/Validation/DataForge.Modules.Validation.UnitTests/DataForge.Modules.Validation.UnitTests.csproj" />
+  </Folder>
+</Solution>

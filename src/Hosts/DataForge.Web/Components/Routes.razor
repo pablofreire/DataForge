@@ -1,0 +1,19 @@
+@using DataForge.Web.Composition
+
+<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="PresentationAssemblies.All" NotFoundPage="typeof(Pages.NotFoundPage)">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
+            <NotAuthorized>
+                @if (context.User.Identity?.IsAuthenticated == true)
+                {
+                    <RedirectTo Url="/account/access-denied" />
+                }
+                else
+                {
+                    <RedirectTo Url="/account/login" PreserveReturnUrl="true" />
+                }
+            </NotAuthorized>
+        </AuthorizeRouteView>
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>

@@ -1,0 +1,84 @@
+@page "/"
+@attribute [Authorize(Policy = AuthorizationPolicies.TenantUser)]
+@using DataForge.Modules.Onboarding.Contracts.Dtos
+@using DataForge.Modules.Onboarding.Contracts.Interfaces
+@using DataForge.Modules.Processing.Application.UseCases.Jobs.ListRecent.Contracts
+@using DataForge.Modules.Processing.Application.UseCases.Jobs.ListRecent.Interfaces
+@using DataForge.Modules.Processing.Contracts.Dtos
+@inject IOnboardingModuleApi Onboarding
+@inject IListRecentJobsUseCase ListRecentJobs
+
+<PageTitle>Dashboard | DataForge</PageTitle>
+
+<PageHeader Title="Dashboard" Subtitle="Where your onboarding stands today." />
+
+@if (_stats is not null)
+{
+    <div class="summary-row" data-testid="dashboard-stats">
+        <MetricCard Label="Projects" Value="@DisplayFormat.Count(_stats.ProjectCount)" TestId="stat-projects" />
+        <MetricCard Label="Files uploaded" Value="@DisplayFormat.Count(_stats.DatasetCount)" TestId="stat-datasets" />
+        <MetricCard Label="Rows staged" Value="@DisplayFormat.Count(_stats.RowCount)" TestId="stat-rows" />
+    </div>
+
+    @if (_stats.ProjectCount == 0)
+    {
+        <section class="panel" aria-labelledby="start-title">
+            <h2 id="start-title" class="panel__title">Get a file ready for go-live</h2>
+            <ol class="steps">
+                <li><strong>Create a project</strong> for the data you need to load, such as customer master data.</li>
+                <li><strong>Add validation rules</strong> for the columns the target system depends on.</li>
+                <li><strong>Upload the customer's file.</strong> It is imported and validated in the background.</li>
+                <li><strong>Review the issues</strong>, correct the file and upload it again until every row passes.</li>
+            </ol>
+            <a href="/projects" class="button button--primary">Create the first project</a>
+        </section>
+    }
+}
+
+<section aria-labelledby="activity-title">
+    <h2 id="activity-title" class="section-title">Recent processing</h2>
+    @if (_jobs is { Count: 0 })
+    {
+        <EmptyState Title="Nothing processed yet" Description="Imports and validations appear here as they run." />
+    }
+    else if (_jobs is not null)
+    {
+        <div class="table-wrap">
+            <table class="table" data-testid="recent-jobs">
+                <thead>
+                    <tr>
+                        <th scope="col">Job</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="num">Rows</th>
+                        <th scope="col">Started</th>
+                        <th scope="col">Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var job in _jobs)
+                    {
+                        <tr>
+                            <td>@DisplayFormat.JobType(job.JobType)</td>
+                            <td><StatusBadge Status="@job.Status" /></td>
+                            <td class="num">@DisplayFormat.Count(job.ProcessedItems)</td>
+                            <td>@DisplayFormat.Timestamp(job.StartedAt)</td>
+                            <td>@DisplayFormat.Duration(job.StartedAt, job.CompletedAt)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@code {
+    private OnboardingStatsDto? _stats;
+    private IReadOnlyList<JobSummaryDto>? _jobs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stats = await Onboarding.GetStatsAsync(CancellationToken.None);
+        var jobs = await ListRecentJobs.ExecuteAsync(new ListRecentJobsRequest(10), CancellationToken.None);
+        _jobs = jobs.IsSuccess ? jobs.Value.Jobs : [];
+    }
+}

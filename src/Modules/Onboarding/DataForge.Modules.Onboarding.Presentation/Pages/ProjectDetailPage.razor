@@ -1,0 +1,91 @@
+@page "/projects/{ProjectId:guid}"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = AuthorizationPolicies.TenantUser)]
+@using DataForge.Modules.Onboarding.Application.UseCases.Datasets.ListByProject.Contracts
+@using DataForge.Modules.Onboarding.Application.UseCases.Datasets.ListByProject.Interfaces
+@using DataForge.Modules.Onboarding.Application.UseCases.Projects.GetById.Contracts
+@using DataForge.Modules.Onboarding.Application.UseCases.Projects.GetById.Interfaces
+@inject IGetProjectByIdUseCase GetProject
+@inject IListProjectDatasetsUseCase ListDatasets
+@inject NavigationManager Navigation
+
+<PageTitle>@(_project?.Name ?? "Project") | DataForge</PageTitle>
+
+@if (_notFound)
+{
+    <EmptyState Title="Project not found" Description="It may have been removed, or it belongs to another organization." TestId="project-not-found">
+        <a href="/projects" class="button button--secondary">Back to projects</a>
+    </EmptyState>
+}
+else if (_project is not null)
+{
+    <PageHeader Title="@_project.Name" Subtitle="@_project.Description">
+        <Breadcrumb><a href="/projects">Projects</a></Breadcrumb>
+        <Actions>
+            <a href="/projects/@ProjectId/rules" class="button button--secondary" data-testid="project-rules-link">Validation rules</a>
+        </Actions>
+    </PageHeader>
+
+    <UploadPanel ProjectId="ProjectId" OnUploaded="OpenDataset" />
+
+    <section aria-labelledby="files-title">
+        <h2 id="files-title" class="section-title">Files</h2>
+        @if (_datasets is { Count: 0 })
+        {
+            <EmptyState Title="No files uploaded" Description="Upload the customer's export to start validating it." TestId="datasets-empty" />
+        }
+        else if (_datasets is not null)
+        {
+            <div class="table-wrap">
+                <table class="table" data-testid="datasets-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">File</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="num">Rows</th>
+                            <th scope="col" class="num">Size</th>
+                            <th scope="col">Uploaded</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var dataset in _datasets)
+                        {
+                            <tr>
+                                <td><a href="/datasets/@dataset.DatasetId" class="table__link" data-testid="dataset-link">@dataset.FileName</a></td>
+                                <td><StatusBadge Status="@dataset.Status" /></td>
+                                <td class="num">@DisplayFormat.Count(dataset.RowCount)</td>
+                                <td class="num">@DisplayFormat.Bytes(dataset.SizeBytes)</td>
+                                <td>@DisplayFormat.Timestamp(dataset.CreatedAt)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+}
+
+@code {
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    private GetProjectByIdResponse? _project;
+    private IReadOnlyList<DatasetItem>? _datasets;
+    private bool _notFound;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var project = await GetProject.ExecuteAsync(new GetProjectByIdRequest(ProjectId), CancellationToken.None);
+        if (project.IsFailure)
+        {
+            _notFound = true;
+            return;
+        }
+
+        _project = project.Value;
+        var datasets = await ListDatasets.ExecuteAsync(new ListProjectDatasetsRequest(ProjectId), CancellationToken.None);
+        _datasets = datasets.IsSuccess ? datasets.Value.Datasets : [];
+    }
+
+    private void OpenDataset(Guid datasetId) => Navigation.NavigateTo($"/datasets/{datasetId}");
+}

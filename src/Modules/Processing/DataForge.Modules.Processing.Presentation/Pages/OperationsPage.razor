@@ -1,0 +1,113 @@
+@page "/operations"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = AuthorizationPolicies.ImplementationEngineer)]
+@implements IAsyncDisposable
+@using DataForge.Modules.Processing.Application.UseCases.Jobs.ListOperations.Contracts
+@using DataForge.Modules.Processing.Application.UseCases.Jobs.ListOperations.Interfaces
+@inject IListOperationsJobsUseCase ListOperationsJobs
+
+<PageTitle>Operations | DataForge</PageTitle>
+
+<PageHeader Title="Operations" Subtitle="Processing activity across every customer tenant. Refreshes every few seconds." />
+
+<AlertMessage Message="@_error" Tone="danger" />
+
+@if (_jobs is null)
+{
+    <p class="muted">Loading jobs…</p>
+}
+else if (_jobs.Count == 0)
+{
+    <EmptyState Title="No jobs yet" Description="Jobs appear here as soon as a customer uploads a dataset." TestId="operations-empty" />
+}
+else
+{
+    <div class="summary-row" data-testid="operations-summary">
+        <MetricCard Label="Running" Value="@DisplayFormat.Count(_jobs.Count(item => item.Job.Status == "Running"))" />
+        <MetricCard Label="Queued" Value="@DisplayFormat.Count(_jobs.Count(item => item.Job.Status == "Queued"))" />
+        <MetricCard Label="Failed" Value="@DisplayFormat.Count(_jobs.Count(item => item.Job.Status == "Failed"))" />
+        <MetricCard Label="Tenants" Value="@DisplayFormat.Count(_jobs.Select(item => item.TenantId).Distinct().Count())" />
+    </div>
+
+    <div class="table-wrap">
+        <table class="table" data-testid="operations-jobs">
+            <thead>
+                <tr>
+                    <th scope="col">Tenant</th>
+                    <th scope="col">Job</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="num">Items</th>
+                    <th scope="col" class="num">Attempt</th>
+                    <th scope="col">Started</th>
+                    <th scope="col">Duration</th>
+                    <th scope="col">Last error</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in _jobs)
+                {
+                    <tr>
+                        <td>@item.TenantName</td>
+                        <td>@DisplayFormat.JobType(item.Job.JobType)</td>
+                        <td><StatusBadge Status="@item.Job.Status" /></td>
+                        <td class="num">@DisplayFormat.Count(item.Job.ProcessedItems)</td>
+                        <td class="num">@item.Job.Attempt / @item.Job.MaxAttempts</td>
+                        <td>@DisplayFormat.Timestamp(item.Job.StartedAt)</td>
+                        <td>@DisplayFormat.Duration(item.Job.StartedAt, item.Job.CompletedAt)</td>
+                        <td class="truncate" title="@item.Job.LastError">@item.Job.LastError</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(3);
+
+    private readonly CancellationTokenSource _disposed = new();
+    private IReadOnlyList<OperationsJobItem>? _jobs;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        _ = RefreshLoopAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await ListOperationsJobs.ExecuteAsync(new ListOperationsJobsRequest(200), _disposed.Token);
+        if (result.IsSuccess)
+        {
+            _jobs = result.Value.Jobs;
+            _error = null;
+        }
+        else
+        {
+            _error = result.Error.Message;
+        }
+    }
+
+    private async Task RefreshLoopAsync()
+    {
+        using var timer = new PeriodicTimer(RefreshInterval);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_disposed.Token))
+            {
+                await LoadAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _disposed.CancelAsync();
+        _disposed.Dispose();
+    }
+}

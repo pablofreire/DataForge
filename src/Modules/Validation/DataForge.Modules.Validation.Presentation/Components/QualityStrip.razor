@@ -1,0 +1,27 @@
+@* The signature visual of DataForge: the share of valid and invalid rows of a run, at a glance. *@
+<figure class="quality-strip" data-testid="quality-strip">
+    <div class="quality-strip__bar" role="img" aria-label="@AriaLabel">
+        <span class="quality-strip__valid" style="flex-grow: @ValidRows"></span>
+        <span class="quality-strip__invalid" style="flex-grow: @InvalidRows"></span>
+    </div>
+    <figcaption class="quality-strip__legend">
+        <span class="quality-strip__key quality-strip__key--valid">
+            <strong data-testid="valid-rows">@DisplayFormat.Count(ValidRows)</strong> valid rows (@DisplayFormat.Percent(ValidPercent))
+        </span>
+        <span class="quality-strip__key quality-strip__key--invalid">
+            <strong data-testid="invalid-rows">@DisplayFormat.Count(InvalidRows)</strong> rows need correction (@DisplayFormat.Percent(100 - ValidPercent))
+        </span>
+    </figcaption>
+</figure>
+
+@code {
+    [Parameter, EditorRequired]
+    public long ValidRows { get; set; }
+
+    [Parameter, EditorRequired]
+    public long InvalidRows { get; set; }
+
+    private double ValidPercent => ValidRows + InvalidRows == 0 ? 100 : ValidRows * 100d / (ValidRows + InvalidRows);
+
+    private string AriaLabel => $"{DisplayFormat.Percent(ValidPercent)} of rows are valid";
+}

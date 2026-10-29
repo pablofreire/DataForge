@@ -1,0 +1,176 @@
+@page "/projects/{ProjectId:guid}/rules"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = AuthorizationPolicies.TenantUser)]
+@using DataForge.Modules.Validation.Application.Catalogs
+@using DataForge.Modules.Validation.Application.UseCases.Rules.Shared
+@using DataForge.Modules.Validation.Application.UseCases.Rules.Create.Contracts
+@using DataForge.Modules.Validation.Application.UseCases.Rules.Create.Interfaces
+@using DataForge.Modules.Validation.Application.UseCases.Rules.Delete.Contracts
+@using DataForge.Modules.Validation.Application.UseCases.Rules.Delete.Interfaces
+@using DataForge.Modules.Validation.Application.UseCases.Rules.List.Contracts
+@using DataForge.Modules.Validation.Application.UseCases.Rules.List.Interfaces
+@inject IListValidationRulesUseCase ListRules
+@inject ICreateValidationRuleUseCase CreateRule
+@inject IDeleteValidationRuleUseCase DeleteRule
+
+<PageTitle>Validation rules | DataForge</PageTitle>
+
+@if (_notFound)
+{
+    <EmptyState Title="Project not found" Description="It may have been removed, or it belongs to another organization." TestId="rules-not-found">
+        <a href="/projects" class="button button--secondary">Back to projects</a>
+    </EmptyState>
+}
+else
+{
+    <PageHeader Title="Validation rules" Subtitle="Every file uploaded to this project is checked against these rules. Columns are matched by name, ignoring case.">
+        <Breadcrumb><a href="/projects">Projects</a> <span aria-hidden="true">/</span> <a href="/projects/@ProjectId" data-testid="breadcrumb-project">Project</a></Breadcrumb>
+    </PageHeader>
+
+    <section class="panel" aria-labelledby="add-rule-title">
+        <h2 id="add-rule-title" class="panel__title">Add a rule</h2>
+        <EditForm Model="_form" OnValidSubmit="AddAsync" class="form form--grid" FormName="add-rule">
+            <div class="field">
+                <label for="rule-column" class="field__label">Column</label>
+                <InputText id="rule-column" @bind-Value="_form.ColumnName" class="field__input" placeholder="email" data-testid="rule-column" />
+            </div>
+            <div class="field">
+                <label for="rule-type" class="field__label">Check</label>
+                <InputSelect id="rule-type" @bind-Value="_form.RuleType" class="field__input" data-testid="rule-type">
+                    @foreach (var (value, label) in RuleTypeCatalog.All)
+                    {
+                        <option value="@value">@label</option>
+                    }
+                </InputSelect>
+            </div>
+
+            @switch (_form.RuleType)
+            {
+                case "MaxLength":
+                    <div class="field">
+                        <label for="rule-max-length" class="field__label">Maximum characters</label>
+                        <InputNumber id="rule-max-length" @bind-Value="_form.MaxLength" class="field__input" data-testid="rule-max-length" />
+                    </div>
+                    break;
+                case "Pattern":
+                    <div class="field field--wide">
+                        <label for="rule-pattern" class="field__label">Regular expression</label>
+                        <InputText id="rule-pattern" @bind-Value="_form.Pattern" class="field__input field__input--mono" placeholder="^[A-Z]{2}[0-9]{6}$" data-testid="rule-pattern" />
+                    </div>
+                    break;
+                case "Numeric":
+                    <div class="field">
+                        <label for="rule-min" class="field__label">Minimum (optional)</label>
+                        <InputNumber id="rule-min" @bind-Value="_form.Min" class="field__input" data-testid="rule-min" />
+                    </div>
+                    <div class="field">
+                        <label for="rule-max" class="field__label">Maximum (optional)</label>
+                        <InputNumber id="rule-max" @bind-Value="_form.Max" class="field__input" data-testid="rule-max" />
+                    </div>
+                    break;
+                case "Date":
+                    <div class="field">
+                        <label for="rule-format" class="field__label">Date format</label>
+                        <InputText id="rule-format" @bind-Value="_form.Format" class="field__input field__input--mono" placeholder="yyyy-MM-dd" data-testid="rule-format" />
+                    </div>
+                    break;
+                case "AllowedValues":
+                    <div class="field field--wide">
+                        <label for="rule-allowed" class="field__label">Allowed values, separated by commas</label>
+                        <InputText id="rule-allowed" @bind-Value="_form.AllowedValues" class="field__input" placeholder="Active, Inactive, Suspended" data-testid="rule-allowed" />
+                    </div>
+                    break;
+            }
+
+            <div class="form__actions">
+                <button type="submit" class="button button--primary" data-testid="rule-add">Add rule</button>
+            </div>
+        </EditForm>
+        <AlertMessage Message="@_formError" Tone="danger" TestId="rule-error" />
+    </section>
+
+    @if (_rules is { Count: 0 })
+    {
+        <EmptyState Title="No rules yet" Description="Without rules, uploaded files are imported but not validated." TestId="rules-empty" />
+    }
+    else if (_rules is not null)
+    {
+        <div class="table-wrap">
+            <table class="table" data-testid="rules-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Column</th>
+                        <th scope="col">Check</th>
+                        <th scope="col">Added</th>
+                        <th scope="col"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rule in _rules)
+                    {
+                        <tr data-testid="rule-row">
+                            <td class="cell-value">@rule.ColumnName</td>
+                            <td>@rule.Description</td>
+                            <td>@DisplayFormat.Timestamp(rule.CreatedAt)</td>
+                            <td class="actions">
+                                <button type="button" class="button button--ghost" @onclick="() => RemoveAsync(rule.RuleId)" aria-label="Remove rule for @rule.ColumnName">Remove</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public Guid ProjectId { get; set; }
+
+    private RuleFormModel _form = new();
+    private IReadOnlyList<ValidationRuleItem>? _rules;
+    private string? _formError;
+    private bool _notFound;
+
+    protected override Task OnParametersSetAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var result = await ListRules.ExecuteAsync(new ListValidationRulesRequest(ProjectId), CancellationToken.None);
+        if (result.IsFailure)
+        {
+            _notFound = true;
+            return;
+        }
+
+        _rules = result.Value.Rules;
+    }
+
+    private async Task AddAsync()
+    {
+        _formError = null;
+        var allowed = _form.AllowedValues?
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        var request = new CreateValidationRuleRequest(
+            ProjectId, _form.ColumnName, _form.RuleType, _form.MaxLength, _form.Pattern, _form.Min, _form.Max, _form.Format, allowed);
+
+        var result = await CreateRule.ExecuteAsync(request, CancellationToken.None);
+        if (result.IsFailure)
+        {
+            _formError = result.Error.Details is { Count: > 0 } details
+                ? string.Join(" ", details.SelectMany(detail => detail.Value))
+                : result.Error.Message;
+            return;
+        }
+
+        _form = new RuleFormModel { RuleType = _form.RuleType };
+        await LoadAsync();
+    }
+
+    private async Task RemoveAsync(Guid ruleId)
+    {
+        await DeleteRule.ExecuteAsync(new DeleteValidationRuleRequest(ruleId), CancellationToken.None);
+        await LoadAsync();
+    }
+}

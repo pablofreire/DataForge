@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <!-- SQL migrations ship inside the assembly and are applied by DataForge.Migrator. -->
+    <EmbeddedResource Include="Persistence\Migrations\*.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../DataForge.Modules.Validation.Application/DataForge.Modules.Validation.Application.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/DataForge.BuildingBlocks.Infrastructure/DataForge.BuildingBlocks.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

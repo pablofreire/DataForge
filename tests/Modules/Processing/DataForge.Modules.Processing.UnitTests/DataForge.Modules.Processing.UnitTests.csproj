@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../../src/Modules/Processing/DataForge.Modules.Processing.Application/DataForge.Modules.Processing.Application.csproj" />
+  </ItemGroup>
+
+</Project>

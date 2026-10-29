@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../DataForge.Modules.Processing.Application/DataForge.Modules.Processing.Application.csproj" />
+    <ProjectReference Include="../DataForge.Modules.Processing.Contracts/DataForge.Modules.Processing.Contracts.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/DataForge.BuildingBlocks.Web/DataForge.BuildingBlocks.Web.csproj" />
+  </ItemGroup>
+
+</Project>

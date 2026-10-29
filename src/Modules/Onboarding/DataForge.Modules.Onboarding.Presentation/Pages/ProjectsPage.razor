@@ -1,0 +1,114 @@
+@page "/projects"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = AuthorizationPolicies.TenantUser)]
+@using DataForge.Modules.Onboarding.Application.UseCases.Projects.Create.Contracts
+@using DataForge.Modules.Onboarding.Application.UseCases.Projects.Create.Interfaces
+@using DataForge.Modules.Onboarding.Application.UseCases.Projects.List.Contracts
+@using DataForge.Modules.Onboarding.Application.UseCases.Projects.List.Interfaces
+@inject IListProjectsUseCase ListProjects
+@inject ICreateProjectUseCase CreateProject
+@inject NavigationManager Navigation
+
+<PageTitle>Projects | DataForge</PageTitle>
+
+<PageHeader Title="Onboarding projects" Subtitle="Each project groups the files a customer must load and the rules those files must pass.">
+    <Actions>
+        <button type="button" class="button button--primary" @onclick="ToggleForm" data-testid="new-project">
+            @(_showForm ? "Close" : "New project")
+        </button>
+    </Actions>
+</PageHeader>
+
+@if (_showForm)
+{
+    <section class="panel" aria-labelledby="new-project-title">
+        <h2 id="new-project-title" class="panel__title">New project</h2>
+        <EditForm Model="_form" OnValidSubmit="CreateAsync" class="form form--inline" FormName="create-project">
+            <div class="field field--grow">
+                <label for="project-name" class="field__label">Name</label>
+                <InputText id="project-name" @bind-Value="_form.Name" class="field__input" placeholder="Customer master data, wave 1" data-testid="project-name" />
+            </div>
+            <div class="field field--grow">
+                <label for="project-description" class="field__label">Description (optional)</label>
+                <InputText id="project-description" @bind-Value="_form.Description" class="field__input" data-testid="project-description" />
+            </div>
+            <button type="submit" class="button button--primary" disabled="@_saving" data-testid="project-create">Create project</button>
+        </EditForm>
+        <AlertMessage Message="@_formError" Tone="danger" TestId="project-error" />
+    </section>
+}
+
+@if (_projects is null)
+{
+    <p class="muted">Loading projects…</p>
+}
+else if (_projects.Count == 0)
+{
+    <EmptyState Title="No projects yet" Description="Create a project, then upload the customer's first file." TestId="projects-empty" />
+}
+else
+{
+    <div class="table-wrap">
+        <table class="table" data-testid="projects-table">
+            <thead>
+                <tr>
+                    <th scope="col">Project</th>
+                    <th scope="col" class="num">Files</th>
+                    <th scope="col" class="num">Rows</th>
+                    <th scope="col">Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var project in _projects)
+                {
+                    <tr>
+                        <td>
+                            <a href="/projects/@project.ProjectId" class="table__link" data-testid="project-link">@project.Name</a>
+                            @if (!string.IsNullOrWhiteSpace(project.Description))
+                            {
+                                <span class="table__secondary">@project.Description</span>
+                            }
+                        </td>
+                        <td class="num">@DisplayFormat.Count(project.DatasetCount)</td>
+                        <td class="num">@DisplayFormat.Count(project.TotalRows)</td>
+                        <td>@DisplayFormat.Timestamp(project.CreatedAt)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private readonly ProjectFormModel _form = new();
+    private IReadOnlyList<ProjectItem>? _projects;
+    private bool _showForm;
+    private bool _saving;
+    private string? _formError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await ListProjects.ExecuteAsync(new ListProjectsRequest(), CancellationToken.None);
+        _projects = result.IsSuccess ? result.Value.Projects : [];
+    }
+
+    private void ToggleForm() => _showForm = !_showForm;
+
+    private async Task CreateAsync()
+    {
+        _saving = true;
+        _formError = null;
+        var result = await CreateProject.ExecuteAsync(new CreateProjectRequest(_form.Name, _form.Description), CancellationToken.None);
+        _saving = false;
+
+        if (result.IsFailure)
+        {
+            _formError = result.Error.Details is { Count: > 0 } details
+                ? string.Join(" ", details.SelectMany(detail => detail.Value))
+                : result.Error.Message;
+            return;
+        }
+
+        Navigation.NavigateTo($"/projects/{result.Value.ProjectId}");
+    }
+}

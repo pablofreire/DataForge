@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/.vs/
+**/node_modules/
+data/
+docs/evidence/
+tests/
+.git/
+.github/
+*.md
