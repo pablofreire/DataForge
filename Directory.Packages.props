@@ -30,7 +30,7 @@
     <PackageVersion Include="FluentValidation" Version="12.2.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
     <PackageVersion Include="BCrypt.Net-Next" Version="4.2.0" />
-    <PackageVersion Include="Sep" Version="0.17.1" />
+    <PackageVersion Include="Sep" Version="0.18.0" />
   </ItemGroup>
 
   <!-- Hosting, logging, telemetry -->
