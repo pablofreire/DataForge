@@ -1,5 +1,5 @@
 # Multi-stage build shared by the three hosts. Select one with --build-arg HOST=DataForge.Web|DataForge.Worker|DataForge.Migrator.
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 ARG HOST=DataForge.Web
 WORKDIR /src
 
